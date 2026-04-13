@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: verdant-edge
+  datasource:
+    url: jdbc:mysql://${verdant.datasource.host}:${verdant.datasource.port}/${verdant.datasource.database}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${verdant.datasource.username}
+    password: ${verdant.datasource.password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml        # Mapper XML 文件位置
+  type-aliases-package: edge.verdant.pojo.entity   # 实体类包别名（可选）
+  configuration:
+    map-underscore-to-camel-case: true            # 开启下划线转驼峰
+
+logging:
+  level:
+    edge:
+      verdant:
+        mapper: debug
+        service: info
+        controller: info
+
+verdant:
+  jwt:
+    # 设置jwt签名加密时使用的秘钥
+    admin-secret-key: verdant
+    # 设置jwt过期时间 83天
+    admin-ttl: 720000000
+    # 设置前端传递过来的令牌名称
+    admin-token-name: token
+
+  alioss: # 茶白的oss
+    endpoint: oss-cn-guangzhou.aliyuncs.com
+    access-key-id: LTAI5tSWVKFv455PWasZ3ax6
+    access-key-secret: 5OfRgot0MaI5Uy7D4eoZuPwLGuCENT
+    bucket-name: bucket-name
