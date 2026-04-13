@@ -31,7 +31,7 @@ verdant:
     admin-token-name: token
 
   alioss: # 茶白的oss
-    endpoint: oss-cn-guangzhou.aliyuncs.com
-    access-key-id: LTAI5tSWVKFv455PWasZ3ax6
-    access-key-secret: 5OfRgot0MaI5Uy7D4eoZuPwLGuCENT
+    endpoint:
+    access-key-id:
+    access-key-secret:
     bucket-name: bucket-name
