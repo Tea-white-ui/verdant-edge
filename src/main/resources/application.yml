@@ -7,11 +7,13 @@ spring:
     password: ${verdant.datasource.password}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-mybatis:
-  mapper-locations: classpath:mapper/*.xml        # Mapper XML 文件位置
-  type-aliases-package: edge.verdant.pojo.entity   # 实体类包别名（可选）
+# MP 配置
+mybatis-plus:
   configuration:
-    map-underscore-to-camel-case: true            # 开启下划线转驼峰
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 开启 SQL 日志，方便调试
+  global-config:
+    db-config:
+      id-type: auto # 主键策略：数据库自增
 
 logging:
   level:
@@ -30,7 +32,7 @@ verdant:
     # 设置前端传递过来的令牌名称
     admin-token-name: token
 
-  alioss: # 茶白的oss
+  alioss: # oss
     endpoint:
     access-key-id:
     access-key-secret:

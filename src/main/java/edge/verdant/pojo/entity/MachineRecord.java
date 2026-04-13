@@ -1,14 +1,20 @@
 package edge.verdant.pojo.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 @Data
+@TableName("machine_record")
+
 public class MachineRecord {
     /**
      * 主键
      */
+    @TableId(type = IdType.AUTO) // 指定主键生成策略
     private Long id;
 
     /**
