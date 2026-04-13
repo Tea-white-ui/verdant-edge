@@ -58,7 +58,7 @@ public class MachineRecord {
     private Integer growthStage;
 
     /**
-     * 病害结果
+     * 病害(异常)结果
      */
     private String diseaseResult;
 

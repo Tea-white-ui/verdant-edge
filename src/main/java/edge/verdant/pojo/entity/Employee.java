@@ -15,22 +15,22 @@ public class Employee {
     private Long id;
 
     /**
-     * 用户名
+     * 员工名
      */
     private String name;
 
     /**
-     * 用户密码
+     * 账户密码
      */
     private String password;
 
     /**
-     * 用户邮箱
+     * 员工邮箱
      */
     private String email;
 
     /**
-     * 用户手机号
+     * 员工手机号
      */
     private String phone;
 
