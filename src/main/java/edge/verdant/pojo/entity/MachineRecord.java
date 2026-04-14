@@ -58,16 +58,6 @@ public class MachineRecord {
     private Integer growthStage;
 
     /**
-     * 病害(异常)结果
-     */
-    private String diseaseResult;
-
-    /**
-     * 摄影图像
-     */
-    private String imageUrl;
-
-    /**
      * 警告内容
      */
     private String warning;

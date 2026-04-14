@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import edge.verdant.interceptor.JwtTokenAdminInterceptor;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -13,12 +16,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import springfox.documentation.builders.ApiInfoBuilder;
-import springfox.documentation.builders.PathSelectors;
-import springfox.documentation.builders.RequestHandlerSelectors;
-import springfox.documentation.service.ApiInfo;
-import springfox.documentation.spi.DocumentationType;
-import springfox.documentation.spring.web.plugins.Docket;
+import org.springdoc.core.models.GroupedOpenApi;
 
 @Configuration
 @Slf4j
@@ -36,24 +34,43 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
     }
 
     /**
-     * 生成测试接口
+     * 配置OpenAPI全局信息
      */
     @Bean
-    public Docket docketAdmin() {
-        log.info("准备生成接口文档...");
-        ApiInfo apiInfo = new ApiInfoBuilder()
-                .title("项目接口文档")
-                .version("1.0")
-                .description("智能植被监测系统后端接口文档")
+    public OpenAPI customOpenAPI() {
+        return new OpenAPI()
+                .info(new Info()
+                        .title("项目接口文档")
+                        .version("1.0")
+                        .description("智能植被监测系统后端接口文档")
+                        .contact(new Contact()
+                                .name("verdant-team")));
+    }
+
+    /**
+     * 生成前端接口文档 (Admin)
+     */
+    @Bean
+    public GroupedOpenApi adminApi() {
+        log.info("准备生成前端接口文档...");
+        return GroupedOpenApi.builder()
+                .group("前端接口")
+                .pathsToMatch("/admin/**")
+                .packagesToScan("edge.verdant.controller.admin")
                 .build();
-        Docket docket = new Docket(DocumentationType.SWAGGER_2)
-                .groupName("前端接口")
-                .apiInfo(apiInfo)
-                .select()
-                .apis(RequestHandlerSelectors.basePackage("com.verdant.controller"))
-                .paths(PathSelectors.any())
+    }
+
+    /**
+     * 生成设备接口文档 (Machine)
+     */
+    @Bean
+    public GroupedOpenApi machineApi() {
+        log.info("准备生成设备接口文档...");
+        return GroupedOpenApi.builder()
+                .group("设备接口")
+                .pathsToMatch("/machine/**")
+                .packagesToScan("edge.verdant.controller.machine")
                 .build();
-        return docket;
     }
 
     /**
