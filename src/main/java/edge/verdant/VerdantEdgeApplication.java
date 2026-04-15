@@ -5,13 +5,15 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @SpringBootApplication
-@EnableTransactionManagement //开启注解方式的事务管理
+@EnableTransactionManagement
 @Slf4j
-@EnableCaching// 开启缓存注解
-@MapperScan("edge.verdant.mapper") // mybatis plus 指定mapper包路径
+@EnableCaching
+@EnableScheduling
+@MapperScan("edge.verdant.mapper")
 public class VerdantEdgeApplication {
 
     public static void main(String[] args) {

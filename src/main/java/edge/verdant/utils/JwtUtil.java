@@ -21,17 +21,15 @@ public class JwtUtil {
      * @param claims    设置的信息
      */
     public static String createJWT(String secretKey, long ttlMillis, Map<String, Object> claims) {
-        SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
-
         long expMillis = System.currentTimeMillis() + ttlMillis;
         Date exp = new Date(expMillis);
 
         SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
 
         JwtBuilder builder = Jwts.builder()
-                .setClaims(claims)
-                .signWith(key, signatureAlgorithm)
-                .setExpiration(exp);
+                .claims(claims)
+                .expiration(exp)
+                .signWith(key);
 
         return builder.compact();
     }

@@ -24,6 +24,8 @@ public class MachineRecordServiceImpl implements MachineRecordService {
     public void save(MachineRecordDTO machineRecordDTO) {
         MachineRecord machineRecord = new MachineRecord();
         BeanUtils.copyProperties(machineRecordDTO, machineRecord);
+        machineRecord.setMachineId(machineRecordDTO.getId());
+        machineRecord.setId(null);
         // 查询数据库判断设备id是否存在
         Machine machine = machineMapper.selectById(machineRecord.getMachineId());
         if (machine != null) {

@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 
 @Data
 public class MachineRecordDTO {
+    private Long id;
     private int number;// 设备编号
     private BigDecimal soilMoisture;// 土壤湿度
     private BigDecimal airTemp;// 空气温度
