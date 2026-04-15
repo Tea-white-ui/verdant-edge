@@ -1,17 +1,11 @@
-package edge.verdant.pojo.entity;
+package edge.verdant.pojo.dto;
 
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
-@TableName("machine_camera")
-public class MachineCamera {
-    /**
-     * 主键
-     */
-    private Long id;
+public class MachineCameraDTO {
     /**
      * 设备id
      */
@@ -19,11 +13,10 @@ public class MachineCamera {
     /**
      * 摄影图片
      */
-    private String image_url;
+    private byte[] image;
     /**
      * 诊断结果
      */
-    // 0为正常，1为黄叶异常，2为白斑异常
     private int diseaseResult;
     /**
      * 警告内容

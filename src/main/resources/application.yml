@@ -1,11 +1,19 @@
+server:
+  port: 8080
+  forward-headers-strategy: framework
+
 spring:
+  profiles:
+    active: dev
   application:
     name: verdant-edge
   datasource:
-    url: jdbc:mysql://${verdant.datasource.host}:${verdant.datasource.port}/${verdant.datasource.database}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+    url: ${verdant.datasource.url}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
     username: ${verdant.datasource.username}
     password: ${verdant.datasource.password}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  thymeleaf:
+    check-template-location: false
 
 # MP 配置
 mybatis-plus:
@@ -23,7 +31,10 @@ logging:
         service: info
         controller: info
 
+
+
 verdant:
+
   jwt:
     # 设置jwt签名加密时使用的秘钥
     admin-secret-key: verdant
@@ -33,7 +44,7 @@ verdant:
     admin-token-name: token
 
   alioss: # oss
-    endpoint:
-    access-key-id:
-    access-key-secret:
-    bucket-name: bucket-name
+    endpoint: ${verdant.alioss.endpoint}
+    access-key-id: ${verdant.alioss.accessKeyId}
+    access-key-secret: ${verdant.alioss.accessKeySecret}
+    bucket-name: ${verdant.alioss.bucket-name}
