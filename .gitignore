@@ -33,4 +33,4 @@ build/
 .vscode/
 
 ### yml ###
-application-dex.yml
+src/main/resources/application-dev.yml

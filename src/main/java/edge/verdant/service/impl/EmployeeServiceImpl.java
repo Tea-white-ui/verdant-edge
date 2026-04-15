@@ -1,9 +1,12 @@
 package edge.verdant.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import edge.verdant.exception.BaseException;
 import edge.verdant.mapper.EmployeeMapper;
 import edge.verdant.pojo.dto.EmployeeLoginDTO;
+import edge.verdant.pojo.dto.EmployeePageQueryDTO;
 import edge.verdant.pojo.dto.EmployeeRegisterDTO;
 import edge.verdant.pojo.entity.Employee;
 import edge.verdant.pojo.vo.EmployeeLoginVO;
@@ -11,12 +14,14 @@ import edge.verdant.properties.JwtProperties;
 import edge.verdant.service.EmployeeService;
 import edge.verdant.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.apache.catalina.User;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -77,6 +82,39 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setPassword(hashPassword);
         // 插入员工到数据库
         employeeMapper.insert(employee);
+    }
+
+    /**
+     * 分页查询员工
+     */
+    public Page<Employee> getPage(EmployeePageQueryDTO employeePageQueryDTO) {
+        // 1. 创建分页对象
+        Page<Employee> page = new Page<>(employeePageQueryDTO.getPage(), employeePageQueryDTO.getPageSize());
+
+        // 2. 构建查询条件（Lambda 写法推荐，编译期安全）
+        LambdaQueryWrapper<Employee> wrapper = new LambdaQueryWrapper<>();
+        wrapper.like(StringUtils.hasText(employeePageQueryDTO.getKeyword()),
+                Employee::getName, employeePageQueryDTO.getKeyword());
+
+        // 3. 执行分页查询
+        Page<Employee> resultPage = employeeMapper.selectPage(page, wrapper);
+
+        // 4. 将返回结果中的密码字段脱敏
+        if (resultPage != null && resultPage.getRecords() != null) {
+            resultPage.getRecords().forEach(emp -> emp.setPassword("******"));
+        }
+
+        return resultPage;
+    }
+
+    /**
+     * 根据id查询员工
+     */
+    @Override
+    public Employee getById(Long id) {
+        Employee employee = employeeMapper.selectById(id);
+        employee.setPassword("******");
+        return employee;
     }
 
     /**
