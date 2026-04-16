@@ -3,6 +3,7 @@ package edge.verdant.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import edge.verdant.constant.JwtClaimsConstant;
 import edge.verdant.exception.BaseException;
 import edge.verdant.mapper.EmployeeMapper;
 import edge.verdant.pojo.dto.EmployeeLoginDTO;
@@ -14,9 +15,7 @@ import edge.verdant.properties.JwtProperties;
 import edge.verdant.service.EmployeeService;
 import edge.verdant.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
-import org.apache.catalina.User;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.BeansException;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -53,9 +52,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         // 验证密码是否匹配
         boolean isMatch = BCrypt.checkpw(password, employee.getPassword());
         if(isMatch){
-            // 密码匹配，生成jwt，并返回员工信息
             Map map = new HashMap();
-            map.put(employee.getName(),employee.getId());
+            map.put(JwtClaimsConstant.EMP_ID, employee.getId());
             employee.setPassword("******");
             String jwt = JwtUtil.createJWT(jwtProperties.getAdminSecretKey(),
                     jwtProperties.getAdminTtl(),
@@ -113,6 +111,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public Employee getById(Long id) {
         Employee employee = employeeMapper.selectById(id);
+        if(employee == null) return null;
         employee.setPassword("******");
         return employee;
     }

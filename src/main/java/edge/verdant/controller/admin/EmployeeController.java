@@ -50,9 +50,9 @@ public class EmployeeController {
     /**
      * 分页查询员工接口
      */
-    @GetMapping("/page")
+    @PostMapping("/page")
     @Operation(summary = "分页查询员工")
-    public PageResult getPage(EmployeePageQueryDTO dto) {
+    public PageResult getPage(@RequestBody EmployeePageQueryDTO dto) {
         Page<Employee> page = employeeService.getPage(dto);
 
         PageResult pageResult = new PageResult();

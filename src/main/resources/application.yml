@@ -3,17 +3,33 @@ server:
   forward-headers-strategy: framework
 
 spring:
+
   profiles:
     active: dev
+
   application:
     name: verdant-edge
+
   datasource:
     url: ${verdant.datasource.url}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
     username: ${verdant.datasource.username}
     password: ${verdant.datasource.password}
     driver-class-name: com.mysql.cj.jdbc.Driver
+
   thymeleaf:
     check-template-location: false
+
+  mail:
+    host: ${verdant.mail.host}
+    port: ${verdant.mail.port}
+    username: ${verdant.mail.username}
+    password: ${verdant.mail.password}
+    protocol: smtps
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.ssl.enable: true
+      mail.smtp.timeout: 5000
+      mail.smtp.connectiontimeout: 5000
 
 # MP 配置
 mybatis-plus:
