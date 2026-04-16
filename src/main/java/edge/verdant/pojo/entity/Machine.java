@@ -18,7 +18,7 @@ public class Machine {
     /**
      * 员工id
      */
-    private Long employee_id;
+    private Long employeeId;
     /**
      * 设备名称
      */

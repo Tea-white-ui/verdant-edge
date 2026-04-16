@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import edge.verdant.exception.BaseException;
 import edge.verdant.mapper.MachineMapper;
 import edge.verdant.mapper.MachineRecordMapper;
+import edge.verdant.pojo.dto.MachineOldRecordsDTO;
 import edge.verdant.pojo.dto.MachineRecordDTO;
 import edge.verdant.pojo.entity.Machine;
 import edge.verdant.pojo.entity.MachineRecord;
@@ -34,8 +35,6 @@ public class MachineRecordServiceImpl implements MachineRecordService {
         Machine machine = machineMapper.selectById(machineRecord.getMachineId());
         if (machine != null) {
             // 如果存在则允许记录
-            // 警告内容可以赛水分过低，或温度过高什么的
-            // todo 判断传感器数据是否异常，如果异常则发出警告通知该员工
             machineRecordMapper.insert(machineRecord);
         }else {
             // 设备未注册，抛出异常
@@ -97,5 +96,24 @@ public class MachineRecordServiceImpl implements MachineRecordService {
         }
 
         return new ArrayList<>(latestRecordMap.values());
+    }
+
+    /**
+     * 根据设备id查询历史数据
+     */
+    @Override
+    public List<MachineRecord> getOldRecordsById(MachineOldRecordsDTO dto) {
+        // 构建查询条件，根据设备ID查询历史记录
+        LambdaQueryWrapper<MachineRecord> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(MachineRecord::getMachineId, dto.getId())
+                .orderByDesc(MachineRecord::getCreateTime); // 按创建时间倒序排列
+
+        // 设置分页大小，如果size为空或小于等于0，则默认查询10条，防止查询过多数据
+        int size = (dto.getSize() != 0 && dto.getSize() > 0) ? dto.getSize() : 10;
+        queryWrapper.last("LIMIT " + size);
+
+        // 执行查询并返回结果列表
+        return machineRecordMapper.selectList(queryWrapper);
+
     }
 }

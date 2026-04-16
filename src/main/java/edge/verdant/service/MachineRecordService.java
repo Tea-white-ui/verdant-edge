@@ -1,5 +1,6 @@
 package edge.verdant.service;
 
+import edge.verdant.pojo.dto.MachineOldRecordsDTO;
 import edge.verdant.pojo.dto.MachineRecordDTO;
 import edge.verdant.pojo.entity.MachineRecord;
 
@@ -20,5 +21,10 @@ public interface MachineRecordService {
      * 根据员工id批量获得最新设备记录
      */
     List<MachineRecord> getByEmployeeId(Long employeeId);
+
+    /**
+     * 根据设备id查询历史数据
+     */
+    List<MachineRecord> getOldRecordsById(MachineOldRecordsDTO dto);
 }
 
