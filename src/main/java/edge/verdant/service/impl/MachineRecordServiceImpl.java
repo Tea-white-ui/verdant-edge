@@ -23,7 +23,7 @@ public class MachineRecordServiceImpl implements MachineRecordService {
     private final MachineMapper machineMapper;
 
     /**
-     * 保存单词设备传感器数据
+     * 保存单次设备传感器数据
      */
     @Override
     public void save(MachineRecordDTO machineRecordDTO) {

@@ -44,7 +44,7 @@ public class MachineCameraServiceImpl implements MachineCameraService {
 
         MachineCamera machineCamera = new MachineCamera();
         BeanUtils.copyProperties(machineCameraDTO,machineCamera);
-        machineCamera.setImage_url(url);
+        machineCamera.setImageUrl(url);
         machineCameraMapper.insert(machineCamera);
 
         int diseaseResult = machineCamera.getDiseaseResult();

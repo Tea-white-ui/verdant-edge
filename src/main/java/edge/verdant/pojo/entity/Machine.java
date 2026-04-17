@@ -34,17 +34,17 @@ public class Machine {
     /**
      * 植物名称
      */
-    private String plant_name;
+    private String plantName;
     /**
      * 植物类型
      */
-    private String plant_type;
+    private String plantType;
     /**
      * 创建时间
      */
-    private LocalDateTime create_time;
+    private LocalDateTime createTime;
     /**
      * 修改时间
      */
-    private LocalDateTime update_time;
+    private LocalDateTime updateTime;
 }

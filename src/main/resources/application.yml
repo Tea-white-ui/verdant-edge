@@ -1,9 +1,9 @@
 server:
   port: 8080
   forward-headers-strategy: framework
+  address: 0.0.0.0   # 监听所有网卡
 
 spring:
-
   profiles:
     active: dev
 
@@ -15,6 +15,14 @@ spring:
     username: ${verdant.datasource.username}
     password: ${verdant.datasource.password}
     driver-class-name: com.mysql.cj.jdbc.Driver
+
+    hikari:
+      # 核心连接池参数
+      maximum-pool-size: 20      # 最大连接数
+      minimum-idle: 10           # 最小空闲连接数
+      connection-timeout: 30000  # 获取连接超时时间（ms）
+      idle-timeout: 600000       # 空闲连接回收时间（ms）
+      max-lifetime: 1800000      # 连接最大生命周期（ms）
 
   thymeleaf:
     check-template-location: false
@@ -47,10 +55,13 @@ logging:
         service: info
         controller: info
 
-
+aliyun:
+  dashscope:
+    api-key: ${verdant.aliyun.access-key-id}
+    model: qwen-flash
+    timeout: 30000
 
 verdant:
-
   data-retention:
     machine-record-days: 90
     machine-camera-days: 90

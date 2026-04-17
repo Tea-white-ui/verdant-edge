@@ -19,7 +19,7 @@ public class MachineCamera {
     /**
      * 摄影图片
      */
-    private String image_url;
+    private String imageUrl;
     /**
      * 诊断结果
      */
