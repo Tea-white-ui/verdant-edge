@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class MachineRecordController {
     private final MachineRecordService machineRecordService;
 
-    @PostMapping()
+    @PostMapping
     @Operation(summary = "保存单词传感器记录")
     public Result save(@RequestBody MachineRecordDTO machineRecordDTO){
         log.info("记录设备传感器数据：{}",machineRecordDTO);
