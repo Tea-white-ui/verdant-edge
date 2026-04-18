@@ -19,6 +19,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @Tag(name = "植被分析接口")
 @RequestMapping("/admin/vegetationAnalysis")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class VegetationAnalysisController {
 
     private final VegetationAnalysisService vegetationAnalysisService;
