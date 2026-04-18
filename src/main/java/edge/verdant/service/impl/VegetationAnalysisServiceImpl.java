@@ -49,50 +49,16 @@ public class VegetationAnalysisServiceImpl implements VegetationAnalysisService 
     // 超时时间常量（毫秒）
     private static final long SSE_TIMEOUT_MS = 60_000L;
     private static final long SHUTDOWN_TIMEOUT_SEC = 30;
-
-
-
     /**
-     * 调用大模型分析植被数据并返回建议
-     * @param sensorData 分析数据依靠数据（可以来自 MyBatis-Plus 查询结果）
-     * @return 结构化分析结果
+     * 构建植被分析提示词
+     * <p>
+     * 根据传感器数据生成结构化的AI分析提示词，包含当前环境参数和输出格式要求。
+     * 提示词采用纯文本格式，避免使用Markdown，便于客户端直接展示。
+     * </p>
+     *
+     * @param data 植被传感器数据对象，包含植物名称、温度、湿度、光照等监测数据
+     * @return 格式化后的提示词字符串，可直接用于AI模型调用
      */
-    private String analyzeVegetation(VegetationSensorData sensorData) {
-        String prompt = buildAnalysisPrompt(sensorData);
-
-        Map<String, Object> requestBody = Map.of(
-                "model", properties.getModel(),
-                "messages", List.of(
-                        Map.of("role", "system", "content", "你是一位资深农业与植物生态专家。请基于提供的监测数据，给出科学、可操作的种植与养护建议。输出请保持结构化，便于程序解析。"),
-                        Map.of("role", "user", "content", prompt)
-                ),
-                "temperature", 0.3,
-                "max_tokens", 1500,
-                "enable_thinking", false
-        );
-
-        try {
-            Map<String, Object> response = dashScopeWebClient.post()
-                    .uri("/chat/completions")
-                    .bodyValue(requestBody)
-                    .retrieve()
-                    .onStatus(status -> status.isError(), clientResponse ->
-                            clientResponse.bodyToMono(String.class)
-                                    .flatMap(errorBody -> Mono.<RuntimeException>error(new RuntimeException("DashScope调用失败: " + errorBody))))
-                    .bodyToMono(Map.class)
-                    .block(Duration.ofMillis(properties.getTimeout()));
-
-            List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
-            Map<String, Object> firstChoice = choices.get(0);
-            Map<String, Object> message = (Map<String, Object>) firstChoice.get("message");
-            return (String) message.get("content");
-
-        } catch (Exception e) {
-            log.error("调用通义千问分析植被数据失败", e);
-            return "⚠️ 分析服务暂时不可用，请稍后重试。";
-        }
-    }
-
     private String buildAnalysisPrompt(VegetationSensorData data) {
         return String.format("""
             当前植被监测数据如下：
@@ -107,102 +73,93 @@ public class VegetationAnalysisServiceImpl implements VegetationAnalysisService 
             【养护建议】：
             【长期规划】：
             """,
+                // 处理植物名称：为空时显示"未知植物"
                 data.getPlantName() != null ? data.getPlantName() : "未知植物",
+                // 处理空气温度：为空时默认为0.0
                 data.getAirTemp() != null ? data.getAirTemp().doubleValue() : 0.0,
+                // 处理空气湿度：为空时默认为0.0
                 data.getAirHumidity() != null ? data.getAirHumidity().doubleValue() : 0.0,
+                // 处理土壤湿度：为空时默认为0.0
                 data.getSoilMoisture() != null ? data.getSoilMoisture().doubleValue() : 0.0,
+                // 处理光照强度：为空时默认为0.0
                 data.getLightIntensity() != null ? data.getLightIntensity().doubleValue() : 0.0
         );
     }
 
-    /**
-     * 根据设备ID分析植被状况
-     * @param machineId 设备ID
-     * @return AI分析的植被养护建议
-     */
-    @Override
-    public String ByMachineId(String machineId) {
-        Long id = Long.parseLong(machineId);
-
-        Machine machine = machineMapper.selectById(id);
-        if (machine == null) {
-            return "⚠️ 设备不存在";
-        }
-
-        LambdaQueryWrapper<MachineRecord> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(MachineRecord::getMachineId, id)
-               .orderByDesc(MachineRecord::getCreateTime)
-               .last("LIMIT 1");
-        MachineRecord latestRecord = machineRecordMapper.selectOne(wrapper);
-
-        if (latestRecord == null) {
-            return "⚠️ 暂无传感器数据";
-        }
-
-        VegetationSensorData sensorData = new VegetationSensorData();
-        sensorData.setPlantName(machine.getPlantName());
-        sensorData.setAirTemp(latestRecord.getAirTemp());
-        sensorData.setAirHumidity(latestRecord.getAirHumidity());
-        sensorData.setSoilMoisture(latestRecord.getSoilMoisture());
-        sensorData.setLightIntensity(latestRecord.getLightIntensity());
-
-        return analyzeVegetation(sensorData);
-    }
 
     /**
      * 根据设备ID分析植被状况（SSE流式响应）
-     * @param machineId 设备ID
-     * @return SseEmitter 流式响应
+     * <p>
+     * 该方法通过SSE（Server-Sent Events）实现流式响应，使客户端能够实时接收分析进度和结果。
+     * 整个分析过程在独立线程中异步执行，主要包括以下步骤：
+     * 1. 创建SSE发射器并注册生命周期回调（完成、超时、错误）
+     * 2. 在线程池中异步执行分析任务
+     * 3. 逐步推送分析进度事件（查询设备 → 获取数据 → 调用AI → 返回结果）
+     * 4. 流式转发AI模型的输出内容至客户端
+     * </p>
+     *
+     * @param machineId 设备ID，用于查询对应的设备和传感器数据
+     * @return SseEmitter SSE发射器实例，客户端可通过此对象接收流式事件
      */
     @Override
     public SseEmitter ByMachineIdStream(String machineId) {
+        // 创建SSE发射器，设置超时时间为60秒
         SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MS);
+
+        // 使用AtomicBoolean标记SSE连接是否已完成，防止重复调用complete或send导致异常
         AtomicBoolean isCompleted = new AtomicBoolean(false);
 
-        // 注册完成回调，防止重复完成
+        // 注册SSE生命周期回调 -----------------------------------------------------------
+
+        // 完成回调：当SSE连接正常结束时触发，将完成标志设为true
         emitter.onCompletion(() -> {
             log.debug("SSE连接已完成: machineId={}", machineId);
             isCompleted.set(true);
         });
 
+        // 超时回调：当SSE连接超过设定时间无活动时触发，发送超时错误信息
         emitter.onTimeout(() -> {
             log.warn("SSE连接超时: machineId={}", machineId);
             safeSendError(emitter, "⚠️ 分析请求超时，请稍后重试", isCompleted);
         });
 
+        // 错误回调：当SSE连接发生异常时触发，标记连接已完成以阻止后续发送
         emitter.onError((e) -> {
             log.error("SSE连接发生错误: machineId={}", machineId, e);
             isCompleted.set(true);
         });
 
+        // 在线程池中异步执行分析任务，避免阻塞请求线程 -------------------------------------
         executorService.execute(() -> {
             try {
-                // 步骤1：验证设备
+                // 步骤1：验证设备是否存在
                 sendSseEvent(emitter, EVENT_PROGRESS, "正在查询设备信息...");
                 Long id = Long.parseLong(machineId);
 
                 Machine machine = machineMapper.selectById(id);
                 if (machine == null) {
+                    // 设备不存在，发送错误事件并终止
                     safeSendError(emitter, "⚠️ 设备不存在", isCompleted);
                     return;
                 }
                 sendSseEvent(emitter, EVENT_PROGRESS, "设备信息查询成功：" + machine.getName());
 
-                // 步骤2：查询传感器数据
+                // 步骤2：查询该设备最新的传感器记录
                 sendSseEvent(emitter, EVENT_PROGRESS, "正在获取传感器数据...");
                 LambdaQueryWrapper<MachineRecord> wrapper = new LambdaQueryWrapper<>();
                 wrapper.eq(MachineRecord::getMachineId, id)
-                       .orderByDesc(MachineRecord::getCreateTime)
-                       .last("LIMIT 1");
+                       .orderByDesc(MachineRecord::getCreateTime)  // 按创建时间降序排列
+                       .last("LIMIT 1");                           // 只取最新一条记录
                 MachineRecord latestRecord = machineRecordMapper.selectOne(wrapper);
 
                 if (latestRecord == null) {
+                    // 没有传感器数据，发送错误事件并终止
                     safeSendError(emitter, "⚠️ 暂无传感器数据", isCompleted);
                     return;
                 }
                 sendSseEvent(emitter, EVENT_PROGRESS, "传感器数据获取成功");
 
-                // 步骤3：准备分析数据
+                // 步骤3：组装植被传感器数据对象，将设备信息与传感器记录合并
                 VegetationSensorData sensorData = new VegetationSensorData();
                 sensorData.setPlantName(machine.getPlantName());
                 sensorData.setAirTemp(latestRecord.getAirTemp());
@@ -268,6 +225,9 @@ public class VegetationAnalysisServiceImpl implements VegetationAnalysisService 
                 .data(data));
     }
 
+    // 内容缓冲区大小阈值（字符数），超过此值时发送累积内容
+    private static final int CONTENT_BUFFER_THRESHOLD = 50;
+
     /**
      * 流式分析植被数据
      */
@@ -275,7 +235,7 @@ public class VegetationAnalysisServiceImpl implements VegetationAnalysisService 
         if (isCompleted.get()) {
             return "";
         }
-
+        // 定义提示词
         String prompt = buildAnalysisPrompt(sensorData);
         log.info("开始流式AI分析，模型: {}, 提示词长度: {}", properties.getModel(), prompt.length());
 
@@ -292,9 +252,14 @@ public class VegetationAnalysisServiceImpl implements VegetationAnalysisService 
         );
 
         StringBuilder fullContent = new StringBuilder();
+        // 内容缓冲区，用于累积内容片段，减少发送次数
+        StringBuilder contentBuffer = new StringBuilder();
+
+        // 标记是否已接收到有效数据，用于判断API是否正常返回
         AtomicBoolean hasReceivedData = new AtomicBoolean(false);
 
         try {
+            // 发起流式HTTP POST请求 -------------------------------------------------------
             dashScopeWebClient.post()
                     .uri("/chat/completions")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -351,14 +316,18 @@ public class VegetationAnalysisServiceImpl implements VegetationAnalysisService 
                                     String content = (String) delta.get("content");
                                     if (content != null && !content.isEmpty()) {
                                         fullContent.append(content);
+                                        contentBuffer.append(content);
                                         hasReceivedData.set(true);
 
-                                        // 发送流式内容片段
-                                        try {
-                                            sendSseEvent(emitter, EVENT_CHUNK, content);
-                                        } catch (IOException e) {
-                                            log.warn("发送SSE chunk失败，客户端可能已断开", e);
-                                            isCompleted.set(true);
+                                        // 当缓冲区内容超过阈值时，发送累积内容
+                                        if (contentBuffer.length() >= CONTENT_BUFFER_THRESHOLD) {
+                                            try {
+                                                sendSseEvent(emitter, EVENT_CHUNK, contentBuffer.toString());
+                                                contentBuffer.setLength(0); // 清空缓冲区
+                                            } catch (IOException e) {
+                                                log.warn("发送SSE chunk失败，客户端可能已断开", e);
+                                                isCompleted.set(true);
+                                            }
                                         }
                                     }
                                 } else if (firstChoice.containsKey("message")) {
@@ -368,12 +337,18 @@ public class VegetationAnalysisServiceImpl implements VegetationAnalysisService 
                                         String content = (String) message.get("content");
                                         if (content != null && !content.isEmpty()) {
                                             fullContent.append(content);
+                                            contentBuffer.append(content);
                                             hasReceivedData.set(true);
-                                            try {
-                                                sendSseEvent(emitter, EVENT_CHUNK, content);
-                                            } catch (IOException e) {
-                                                log.warn("发送SSE chunk失败", e);
-                                                isCompleted.set(true);
+
+                                            // 当缓冲区内容超过阈值时，发送累积内容
+                                            if (contentBuffer.length() >= CONTENT_BUFFER_THRESHOLD) {
+                                                try {
+                                                    sendSseEvent(emitter, EVENT_CHUNK, contentBuffer.toString());
+                                                    contentBuffer.setLength(0); // 清空缓冲区
+                                                } catch (IOException e) {
+                                                    log.warn("发送SSE chunk失败", e);
+                                                    isCompleted.set(true);
+                                                }
                                             }
                                         }
                                     }
@@ -395,6 +370,15 @@ public class VegetationAnalysisServiceImpl implements VegetationAnalysisService 
             if (!hasReceivedData.get()) {
                 log.warn("AI分析未返回任何有效数据");
                 return "⚠️ 分析服务未返回数据，请稍后重试。";
+            }
+
+            // 发送缓冲区中剩余的内容
+            if (contentBuffer.length() > 0 && !isCompleted.get()) {
+                try {
+                    sendSseEvent(emitter, EVENT_CHUNK, contentBuffer.toString());
+                } catch (IOException e) {
+                    log.warn("发送剩余SSE chunk失败", e);
+                }
             }
 
             String result = fullContent.toString();
