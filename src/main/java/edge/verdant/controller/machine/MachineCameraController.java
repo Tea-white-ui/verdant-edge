@@ -2,21 +2,28 @@ package edge.verdant.controller.machine;
 
 import edge.verdant.pojo.dto.MachineCameraDTO;
 import edge.verdant.result.Result;
+import edge.verdant.service.MachineCameraService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @RestController("machineMachineCameraController")
 @RequestMapping("/machine/machineCamera")
 @Slf4j
 @Tag(name = "设备摄影接口")
+@RequiredArgsConstructor
 public class MachineCameraController {
+    private final MachineCameraService machineCameraService;
     /**
      * 定期摄影存储
      */
@@ -24,22 +31,25 @@ public class MachineCameraController {
     @Operation(summary = "保存单次摄影数据")
     public Result save(HttpServletRequest request) {
         try {
-            // 1. 提取请求头中的内容
+            // 1. 提取请求头中的内容（并进行URL解码以支持中文）
             String diseaseResult = request.getHeader("diseaseResult");
             if (diseaseResult == null || diseaseResult.isEmpty()) {
                 return Result.error("请求头中缺少 diseaseResult");
             }
-
+            diseaseResult = URLDecoder.decode(diseaseResult, StandardCharsets.UTF_8);
+            //
             String warning = request.getHeader("warning");
             if (warning == null || warning.isEmpty()) {
                 return Result.error("请求头中缺少 warning");
             }
+            warning = URLDecoder.decode(warning, StandardCharsets.UTF_8);
 
             String create_time = request.getHeader("create_time");
             if (create_time == null || create_time.isEmpty()) {
                 return Result.error("请求头中缺少 create_time");
             }
-            LocalDateTime createTime = LocalDateTime.parse(create_time);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime createTime = LocalDateTime.parse(create_time, formatter);
 
             String id = request.getHeader("id");
             if (id == null || id.isEmpty()) {
@@ -60,6 +70,10 @@ public class MachineCameraController {
             machineCameraDTO.setImage(image);
             machineCameraDTO.setWarning(warning);
             machineCameraDTO.setCreateTime(createTime);
+            machineCameraDTO.setDiseaseResult(diseaseResult);
+
+
+            machineCameraService.save(machineCameraDTO);
 
             return Result.success();
         } catch (Exception e) {

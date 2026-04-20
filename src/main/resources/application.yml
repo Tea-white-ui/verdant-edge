@@ -41,8 +41,8 @@ spring:
 
 # MP 配置
 mybatis-plus:
-  # configuration:
-    # log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 开启 SQL 日志，方便调试
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 开启 SQL 日志，方便调试
   global-config:
     db-config:
       id-type: auto # 主键策略：数据库自增
@@ -60,6 +60,12 @@ aliyun:
     api-key: ${verdant.aliyun.access-key-id}
     model: qwen-flash
     timeout: 30000
+  oss:
+    endpoint: ${verdant.alioss.endpoint}
+    region: ${verdant.alioss.region}
+    bucketName: ${verdant.alioss.bucketName}
+    accessKeyId: ${verdant.alioss.access-key-id}
+    accessKeySecret: ${verdant.alioss.access-key-secret}
 
 verdant:
   data-retention:
@@ -73,9 +79,3 @@ verdant:
     admin-ttl: 720000000
     # 设置前端传递过来的令牌名称
     admin-token-name: token
-
-  alioss: # oss
-    endpoint: ${verdant.alioss.endpoint}
-    access-key-id: ${verdant.alioss.accessKeyId}
-    access-key-secret: ${verdant.alioss.accessKeySecret}
-    bucket-name: ${verdant.alioss.bucket-name}

@@ -17,7 +17,7 @@ public class MachineCameraDTO {
     /**
      * 诊断结果
      */
-    private int diseaseResult;
+    private String diseaseResult;
     /**
      * 警告内容
      */
